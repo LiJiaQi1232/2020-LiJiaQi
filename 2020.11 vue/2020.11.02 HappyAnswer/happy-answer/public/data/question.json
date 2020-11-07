@@ -3,7 +3,7 @@
     "topic_id": 20,
     "active_topic_id": 4,
     "type": "ONE",
-    "topic_name": "题目一",
+    "topic_name": "哇哈哈",
     "active_id": 1,
     "active_title": "欢乐星期五标题",
     "active_topic_phase": "第一周",
@@ -13,7 +13,7 @@
       {
         "topic_answer_id": 1,
         "topic_id": 20,
-        "answer_name": "答案aaaa",
+        "answer_name": "答案a",
         "is_standard_answer": 0
       },
       {
@@ -25,13 +25,13 @@
       {
         "topic_answer_id": 3,
         "topic_id": 20,
-        "answer_name": "答案cccc",
+        "answer_name": "答案c",
         "is_standard_answer": 0
       },
       {
         "topic_answer_id": 4,
         "topic_id": 20,
-        "answer_name": "答案dddd",
+        "answer_name": "答案d",
         "is_standard_answer": 1
       }
     ]

@@ -8,7 +8,7 @@
       <!-- 首页内容 -->
       <div>
         <div class="home_logo  item_container_style"></div>
-        <router-link to="item" class="start button_style"></router-link>
+        <router-link to="/item" class="start button_style"></router-link>
       </div>
     </section>
   </div>

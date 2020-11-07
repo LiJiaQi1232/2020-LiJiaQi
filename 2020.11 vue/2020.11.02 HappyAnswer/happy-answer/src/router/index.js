@@ -13,8 +13,12 @@ let routes = [
   {
     path: "/item",
     component: () => import("@/components/Item")
-  }
+  },
   //分数路由
+  {
+    path: "/score",
+    component: () => import("@/components/Score")
+  }
 ];
 
 const router = createRouter({
