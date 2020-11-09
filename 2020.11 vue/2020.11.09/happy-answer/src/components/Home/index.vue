@@ -15,13 +15,25 @@
 </template>
 
 <script>
-import { mapState } from "vuex";
+// import { mapState } from "vuex";
+// export default {
+//   computed: {
+//     ...mapState(["level"])
+//   }
+// };
+import { computed } from "vue";
+import { useStore } from "vuex";
 export default {
-  computed: {
-    ...mapState(["level"])
+  name: "Home",
+  setup() {
+    let store = useStore();
+    let level = computed(() => store.state.level);
+
+    return {
+      level
+    };
   }
 };
-
 </script>
 
 <style lang="scss">
