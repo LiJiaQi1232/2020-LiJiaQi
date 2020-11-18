@@ -5,51 +5,59 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
   <style>
-    p{
-      width:200px;
+    p {
+      width: 200px;
       height: 50px;
-      background-color: lightgreen;
+      background-color: red;
+     
     }
-    .w-enter-from{
+
+    .w-enter-from {
       opacity: 0;
     }
-    .w-leave-from{
-      opacity: 0;
+
+    .w-leave-from {
+      opacity: 1;
     }
+
     .w-enter-active,
-    .w-leave-active{
+    .w-leave-active {
       transition: all;
       animation: change 2s;
     }
+
     @keyframes change {
       0%{
-        background-color: lightgreen;
-      }
-      50%{
-        background-color: rgb(255, 232, 182);
-      }
-      100%{
-        background-color: lightgreen;
-      }
+          background-color: green;
+        }
+        50%{
+          background-color: red;
+        }
+        100%{
+          background-color: green;
+        }
     }
+    
   </style>
 </head>
 <body>
   <div id="app">
-    <button @click="active=!active">按钮</button>
+    <button @click="active = !active">按钮</button>
     <transition name="w">
       <p v-if="active">我是内容</p>
     </transition>
+ 
   </div>
+
   <script src="./lib/vue-3.0.0.js"></script>
   <script>
-    let app=Vue.createApp({
+    let app = Vue.createApp({
       data(){
-        return{
-          active:false
+        return {
+          active: false
         }
       }
-    }).mount("#app")
+    }).mount("#app");
   </script>
 </body>
 </html>
