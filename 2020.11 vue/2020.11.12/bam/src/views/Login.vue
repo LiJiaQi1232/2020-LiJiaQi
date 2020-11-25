@@ -144,25 +144,25 @@ import {
   MailOutlined,
   AlipayCircleOutlined,
   TaobaoCircleOutlined,
-  WeiboCircleOutlined,
+  WeiboCircleOutlined
 } from "@ant-design/icons-vue";
 export default {
   data() {
     return {
       form: {
         username: "",
-        password: "",
+        password: ""
       },
       rules: {
         username: [
           { required: true, message: "请输入用户名", trigger: "blur" },
-          { min: 4, max: 16, message: "长度在4-16之间", trigger: "blur" },
+          { min: 4, max: 16, message: "长度在4-16之间", trigger: "blur" }
         ],
         password: [
           { required: true, message: "请输入密码", trigger: "blur" },
-          { min: 6, max: 16, message: "长度在6-16之间", trigger: "blur" },
-        ],
-      },
+          { min: 6, max: 16, message: "长度在6-16之间", trigger: "blur" }
+        ]
+      }
     };
   },
   methods: {
@@ -172,10 +172,10 @@ export default {
         .then(() => {
           console.log("values", this.form);
         })
-        .catch((error) => {
+        .catch(error => {
           console.log("error", error);
         });
-    },
+    }
   },
 
   components: {
@@ -185,8 +185,8 @@ export default {
     MailOutlined,
     AlipayCircleOutlined,
     TaobaoCircleOutlined,
-    WeiboCircleOutlined,
-  },
+    WeiboCircleOutlined
+  }
 };
 </script>
 

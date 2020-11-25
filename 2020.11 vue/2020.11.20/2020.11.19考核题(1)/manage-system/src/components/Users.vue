@@ -1,35 +1,35 @@
 <template>
   <a-layout>
     <a-breadcrumb style="margin: 16px 0">
-      <a-breadcrumb-item
-        ><router-link to="/home" style="font-weight: bold; color: #000"
+      <a-breadcrumb-item>
+        <router-link to="/home" style="font-weight: bold; color: #000"
           >首页</router-link
         >
       </a-breadcrumb-item>
-      <a-breadcrumb-item>用户管理</a-breadcrumb-item>
+      <a-breadcrumb-item> 用户管理 </a-breadcrumb-item>
       <a-breadcrumb-item>用户列表</a-breadcrumb-item>
     </a-breadcrumb>
     <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
-      <!-- 添加用户 -->
       <a-form>
         <a-row>
-          <a-col span="12">
+          <a-col :span="12">
             <a-row :gutter="16">
               <a-col class="gutter-row" :span="16">
                 <a-form-item :wrapperCol="{ span: 24 }">
-                  <a-input-search size="large" placeholder="请输入内容" />
+                  <a-input-search placeholder="请输入内容" size="large" />
                 </a-form-item>
               </a-col>
               <a-col class="gutter-row" :span="8">
-                <a-button type="primary" size="large" @click="addUserModal">
+                <a-button type="primary" size="large" @click="showModal">
                   添加用户
                 </a-button>
+                <!-- 对话框 -->
                 <a-modal
                   title="添加用户"
-                  cancelText="取消"
-                  okText="确定"
                   v-model:visible="visible"
                   :confirm-loading="confirmLoading"
+                  cancelText="取消"
+                  okText="确定"
                 >
                   <a-form>
                     <a-row>
@@ -46,6 +46,7 @@
                           <a-input type="text" />
                         </a-form-item>
                         <!-- 密码 -->
+
                         <a-form-item
                           required
                           has-feedback
@@ -67,7 +68,7 @@
                         >
                           <a-input type="text" />
                         </a-form-item>
-                        <!-- 手机 -->
+                        <!-- 手机号 -->
                         <a-form-item
                           required
                           has-feedback
@@ -89,32 +90,21 @@
       </a-form>
       <!-- 表格 -->
       <a-table
-        :row-key="(record) => record.id"
         :columns="tableColumns"
         :data-source="tableData"
+        :row-key="record => record.id"
         :pagination="false"
-        bordered
       >
         <template #mg_state="{ text }">
           <a-switch :checked="text.mg_state" />
         </template>
-
+        <!-- 操作 -->
         <template #operation>
-          <!-- 编辑 -->
-          <a-button type="primary">
-            <EditOutlined />
-          </a-button>
-          <!--删除  -->
+          <a-button type="primary"> <EditOutlined /> </a-button>
           <a-button type="danger" style="margin: 0 10px">
             <DeleteOutlined />
           </a-button>
-          <!-- 权限 -->
-          <a-button
-            type="default"
-            style="background-color: #e6a23c; color: #fff"
-          >
-            <SettingOutlined />
-          </a-button>
+          <a-button><SettingOutlined /> </a-button>
         </template>
       </a-table>
       <!-- 分页 -->
@@ -122,7 +112,7 @@
         v-model:current="current"
         :total="total"
         style="margin-top: 25px"
-        :show-total="(total) => `共 ${total} 条`"
+        :show-total="total => `共 ${total} 条`"
         show-size-changer
         @showSizeChange="onShowSizeChange"
         :page-size-options="pageSizeOptions"
@@ -135,27 +125,29 @@
 </template>
 
 <script>
-// 引入请求方法
+// 引入httpGet方法
 import { httpGet } from "@/utils/http";
-// 引入请求路径
+// 引入接口
 import { user } from "@/api";
-// 引入小图标
-// 引入菜单小图标
+// 引入图标
+// 编辑: EditOutlined
+// 删除: DeleteOutlined
+// 设置: SettingOutlined
 import {
   EditOutlined,
   DeleteOutlined,
-  SettingOutlined,
+  SettingOutlined
 } from "@ant-design/icons-vue";
-
 export default {
-  // 调用获取用户数据的方法
   created() {
-    // 调用获取用户数据的方法
     this.getUsers();
   },
   data() {
     return {
-      // 表格列配置
+      // 模态框
+      visible: false,
+      confirmLoading: false,
+      // 表格
       tableColumns: [
         { title: "#", dataIndex: "index", key: "index" },
         { title: "姓名", dataIndex: "username", key: "username" },
@@ -166,67 +158,58 @@ export default {
         {
           title: "操作",
           key: "operation",
-          slots: { customRender: "operation" },
-        },
+          slots: { customRender: "operation" }
+        }
       ],
-      // 表单数据
       tableData: [],
-      //分页(当前页数)
+      //分页
       current: 1,
       total: 0,
-      // 指定煤业可以显示多少条
-      pageSizeOptions: ["1", "2", "5", "10"],
-      // 添加用户弹出框
-      visible: false,
-      confirmLoading: false,
+      pageSizeOptions: ["1", "2", "5", "10"]
     };
   },
   methods: {
-    // 获取用户数据
+    showModal() {
+      this.visible = true;
+    },
+    // 获取数据
     getUsers(pagenum = 1, pagesize = 2) {
       httpGet(user.GetUsers, {
         pagenum: pagenum,
-        pagesize: pagesize,
+        pagesize: pagesize
       })
-        .then((response) => {
-          let { meta, data } = response;
-          // 如果后台返回的状态码为200,则代表请求成
+        .then(response => {
+          // console.log(response);
+          let { data, meta } = response;
           if (meta.status == 200) {
-            console.log(response);
-            // 设置表格数据
+            // 将data中的数据给tableData
             this.tableData = data.users;
-            // 设置当前页码
+            // 当前页码
             this.current = data.pagenum;
-            // 设置数据总量
+            // 总条数
             this.total = data.total;
-            // 给每条数据添加序号
             this.tableData.forEach((ele, index) => {
               ele.index = index + 1;
             });
           }
         })
-        .catch((error) => {
-          console.log(error);
+        .catch(err => {
+          console.log(err);
         });
     },
-    // 根据每页显示多少条数据不同  重新渲染表格
+    // 可以改变 pageSize
     onShowSizeChange(current, pageSize) {
       this.getUsers(current, pageSize);
     },
-    // 页码改变的回调 参数是改变后的页码及每页条数
     handlePageChange(page, pageSize) {
       this.getUsers(page, pageSize);
-    },
-    //显示模态框
-    addUserModal() {
-      this.visible = true;
-    },
+    }
   },
   components: {
     EditOutlined,
     DeleteOutlined,
-    SettingOutlined,
-  },
+    SettingOutlined
+  }
 };
 </script>
 
