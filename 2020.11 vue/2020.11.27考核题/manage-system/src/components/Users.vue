@@ -38,12 +38,16 @@
         bordered
       >
         <template #mg_state="{ text }">
-          <a-switch :checked="text.mg_state" />
+          <a-switch
+            v-model:checked="text.mg_state"
+            :id="text.id"
+            @change="handleEditState"
+          />
         </template>
 
-        <template #operation>
+        <template #operation="{ record }">
           <!-- 编辑 -->
-          <a-button type="primary">
+          <a-button type="primary" @click="handleReadUser(record.id)">
             <EditOutlined />
           </a-button>
           <!-- 删除 -->
@@ -54,10 +58,11 @@
           >
             <DeleteOutlined
           /></a-button>
-          <!-- 权限 -->
+          <!-- 角色 -->
           <a-button
             type="default"
             style="background-color: #e6a23c; color: #fff"
+            @click="handleReadRole(record)"
           >
             <SettingOutlined
           /></a-button>
@@ -77,7 +82,7 @@
         show-quick-jumper
       />
     </div>
-    <!-- 添加 -->
+    <!-- 添加用户 -->
     <a-modal
       title="添加用户"
       cancelText="取消"
@@ -87,7 +92,7 @@
       @ok="handleAddUser"
       @cancel="cancelAddUser"
     >
-      <a-form :model="addFormModel" :rules="addFormRules" ref="adddFormRef">
+      <a-form ref="addUserRef" :model="addUserModel" :rules="addUserRules">
         <a-row>
           <a-col :span="24">
             <!-- 用户名 -->
@@ -99,7 +104,7 @@
               :labelCol="{ span: 4 }"
               :wrapperCol="{ span: 20 }"
             >
-              <a-input type="text" v-model:value="addFormModel.username" />
+              <a-input type="text" v-model:value="addUserModel.username" />
             </a-form-item>
             <!-- 密码 -->
             <a-form-item
@@ -112,7 +117,7 @@
             >
               <a-input-password
                 type="password"
-                v-model:value="addFormModel.password"
+                v-model:value="addUserModel.password"
               />
             </a-form-item>
 
@@ -125,7 +130,7 @@
               :labelCol="{ span: 4 }"
               :wrapperCol="{ span: 20 }"
             >
-              <a-input type="text" v-model:value="addFormModel.email" />
+              <a-input type="text" v-model:value="addUserModel.email" />
             </a-form-item>
 
             <!-- 手机号 -->
@@ -137,44 +142,116 @@
               :labelCol="{ span: 4 }"
               :wrapperCol="{ span: 20 }"
             >
-              <a-input type="text" v-model:value="addFormModel.mobile" />
+              <a-input type="text" v-model:value="addUserModel.mobile" />
             </a-form-item>
           </a-col>
         </a-row>
       </a-form>
+    </a-modal>
+    <!-- 编辑用户 -->
+    <a-modal
+      title="编辑用户"
+      cancelText="取消"
+      okText="确定"
+      v-model:visible="editVisible"
+      :confirm-loading="confirmLoading"
+      @ok="handleEditUser"
+      @cancel="cancelEditUser"
+    >
+      <a-form ref="editUserRef" :model="editUserModel" :rules="editUserRules">
+        <a-row>
+          <a-col :span="24">
+            <!-- 用户名 -->
+            <a-form-item
+              has-feedback
+              label="用户名"
+              name="username"
+              :labelCol="{ span: 4 }"
+              :wrapperCol="{ span: 20 }"
+            >
+              <a-input type="text" v-model:value="editUserModel.username" />
+            </a-form-item>
+
+            <!-- 邮箱 -->
+            <a-form-item
+              required
+              has-feedback
+              label="邮箱"
+              name="email"
+              :labelCol="{ span: 4 }"
+              :wrapperCol="{ span: 20 }"
+            >
+              <a-input type="text" v-model:value="editUserModel.email" />
+            </a-form-item>
+
+            <!-- 手机号 -->
+            <a-form-item
+              required
+              has-feedback
+              label="手机号"
+              name="mobile"
+              :labelCol="{ span: 4 }"
+              :wrapperCol="{ span: 20 }"
+            >
+              <a-input type="text" v-model:value="editUserModel.mobile" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
+    <!-- 分配角色 -->
+    <a-modal
+      title="分配角色"
+      v-model:visible="roleVisible"
+      @ok="handleEditRole"
+    >
+      <p>当前的用户:{{ userInfo.username }}</p>
+      <p>当前的角色:{{ userInfo.role_name }}</p>
+      <p>
+        分配新角色
+        <a-select v-model:value="roleSelected" style="width: 120px">
+          <a-select-option
+            :value="item.id"
+            v-for="item in roleList"
+            :key="item.id"
+          >
+            {{ item.roleName }}
+          </a-select-option>
+        </a-select>
+      </p>
     </a-modal>
   </a-layout>
 </template>
 
 <script>
 // 引入请求方法 httpGet
-// 引入httpPost方法
-import { httpGet, httpPost } from "@/utils/http";
+import { httpGet, httpPost, httpDelete, httpPut } from "@/utils/http";
+
 // 引入请求路径
-import { user } from "@/api";
-// 引入全局消息提示框
+import { user, role } from "@/api";
+// 引入全局提示
 import { message } from "ant-design-vue";
 // 引入小图标
+// 引入菜单小图标
 import {
   EditOutlined,
   DeleteOutlined,
   SettingOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons-vue";
-
+import { createVNode } from "vue";
+import { Modal } from "ant-design-vue";
 export default {
   created() {
     // 调用获取用户数据的方法
     this.getUsers();
   },
   data() {
-    // 自定义表单校验----邮箱
+    // 自定义表单校验---邮箱
     let checkEmail = async (rule, value) => {
-      // 如果没有输入 则提示请输入您的邮箱
-      if (value === "") {
+      if (value == "") {
         return Promise.reject("请输入您的邮箱");
-      }
-      // 如果邮箱格式错误 那么提示 格式错误
-      else if (
+      } else if (
         !/^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/.test(value)
       ) {
         return Promise.reject("您的邮箱格式错误");
@@ -182,20 +259,16 @@ export default {
         return Promise.resolve();
       }
     };
-    // 自定义表单校验----手机号
+    // 自定义表单校验---手机号
     let checkMobile = async (rule, value) => {
-      // 如果没有输入 则提示请输入您的手机号
-      if (value === "") {
+      if (value == "") {
         return Promise.reject("请输入您的手机号");
-      }
-      // 如果手机号格式错误 那么提示 格式错误
-      else if (!/^[1]([3-9])[0-9]{9}$/.test(value)) {
+      } else if (!/^[1]([3-9])[0-9]{9}$/.test(value)) {
         return Promise.reject("您的手机号格式错误");
       } else {
         return Promise.resolve();
       }
     };
-
     return {
       // 表格列配置
       tableColumns: [
@@ -216,23 +289,21 @@ export default {
       // 分页
       current: 1,
       total: 0,
-      pagesize: 2,
       // 指定每页可以显示多少条
       pageSizeOptions: ["1", "2", "5", "10"],
 
       // 添加用户弹出框
       visible: false,
       confirmLoading: false,
-      // 表单模型对象
-      addFormModel: {
+      // 模型
+      addUserModel: {
         username: "",
         password: "",
         email: "",
         mobile: "",
       },
-      // 表单校验规则
-      addFormRules: {
-        // 给那个字段添加什么规则
+      // 规则
+      addUserRules: {
         username: [
           // required 必须的
           // trigger 啥时候触发
@@ -248,6 +319,18 @@ export default {
         email: [{ validator: checkEmail, trigger: "change" }],
         mobile: [{ validator: checkMobile, trigger: "change" }],
       },
+      // 编辑用户
+      editVisible: false,
+      editUserModel: {},
+      editUserRules: {
+        email: [{ validator: checkEmail, trigger: "change" }],
+        mobile: [{ validator: checkMobile, trigger: "change" }],
+      },
+      // 分配角色
+      roleVisible: false,
+      userInfo: {},
+      roleSelected: null,
+      roleList: [],
     };
   },
   methods: {
@@ -258,7 +341,6 @@ export default {
         pagesize: pagesize,
       })
         .then((response) => {
-          console.log(response);
           let { meta, data } = response;
           // 如果后台返回的状态码为200,则代表请求成
           if (meta.status == 200) {
@@ -293,30 +375,30 @@ export default {
     },
     // 添加用户
     handleAddUser() {
-      this.$refs.adddFormRef
+      // 表单校验
+      this.$refs.addUserRef
         .validate()
         .then(() => {
           // 整理参数
           let params = {
-            username: this.addFormModel.username,
-            password: this.addFormModel.password,
-            email: this.addFormModel.email,
-            mobile: this.addFormModel.mobile,
+            username: this.addUserModel.username,
+            password: this.addUserModel.password,
+            email: this.addUserModel.email,
+            mobile: this.addUserModel.mobile,
           };
-          httpPost(user.AddUser, params)
-            .then((response) => {
-              console.log(response);
-              let { meta } = response;
-              // 让模态框消失
-              this.visible = false;
-              //  清空输入框
-              this.$refs.adddFormRef.resetFields();
-              // 全局消息提示框 创建成功
-              message.success(meta.msg);
-              // 停留在哪个页面上 添加数据 添加成功后 还在这个页面上
-              let pagenum = this.current;
-              let pagesize = this.pagesize;
-              this.getUsers(pagenum, pagesize);
+          httpPost(user.AddUsers, params)
+            .then((res) => {
+              let { meta } = res;
+              if (meta.status == 201) {
+                // 模态框消失
+                this.visible = false;
+                // 更新
+                this.getUsers();
+                // 提示用户 创建成功
+                message.success(meta.msg);
+                // 清空输入框
+                this.$refs.addUserRef.resetFields();
+              }
             })
             .catch((err) => {
               console.log(err);
@@ -326,15 +408,129 @@ export default {
           console.log(err);
         });
     },
-    // 取消添加用户
+    //取消添加用户
     cancelAddUser() {
-      //  清空输入框
-      this.$refs.adddFormRef.resetFields();
+      // 清空输入框
+      this.$refs.addUserRef.resetFields();
+      // 模态框消失
+      this.visible = false;
     },
     // 删除用户
-    handleDeleteUser(){
-      
-    }
+    handleDeleteUser(userId) {
+      let _this = this;
+      Modal.confirm({
+        title: "提示",
+        okText: "确认",
+        cancelText: "取消",
+        icon: createVNode(ExclamationCircleOutlined),
+        content: "此操作将永久删除该用户，是否继续？",
+        onOk() {
+          httpDelete(user.DeleteUser + `/${userId}`)
+            .then((res) => {
+              // console.log(res);
+              let { meta } = res;
+              if (meta.status == 200) {
+                // 更新
+                _this.getUsers();
+              }
+            })
+            .catch((err) => {
+              console.log(err);
+            });
+        },
+        onCancel() {
+          console.log("Cancel");
+        },
+        class: "test",
+      });
+    },
+    // 回显用户信息
+    handleReadUser(userId) {
+      this.editVisible = true;
+      // 发送请求
+      httpGet(user.GetUsers + `/${userId}`)
+        .then((res) => {
+          // console.log(res);
+          let { meta, data } = res;
+          if (meta.status == 200) {
+            this.editUserModel = data;
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 编辑用户
+    handleEditUser() {
+      httpPut(`users/+${this.editUserModel.id}`, this.editUserModel)
+        .then((res) => {
+          // console.log(res);
+          let { meta } = res;
+          if (meta.status == 200) {
+            message.success(meta.msg);
+            this.getUsers();
+            this.editVisible = false;
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 取消编辑用户
+    cancelEditUser() {
+      this.editVisible = false;
+    },
+    // 回显角色信息
+    handleReadRole(user) {
+      // 让模态框显示
+      this.roleVisible = true;
+      this.userInfo = user;
+      // 发送请求 获取角色列表
+      httpGet(role.GetRoles)
+        .then((res) => {
+          let { meta, data } = res;
+          if (meta.status == 200) {
+            this.roleList = data;
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 分配新角色
+    handleEditRole() {
+      // 获取角色id
+      let rid = this.roleSelected;
+      if (rid == null) {
+        message.error("请选择一个角色！！！");
+        return;
+      }
+      httpPut(`users/${this.userInfo.id}/role`, { rid: this.roleSelected })
+        .then((res) => {
+          // console.log(res);
+          let {meta}=res;
+          if(meta.status==200){
+            this.roleVisible=false;
+            this.getUsers(),
+            this.roleSelected=null
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    // 更改用户状态
+    handleEditState(checked,event) {
+      console.log(event);
+      console.log(checked);
+      httpPut(`users/${event.target}/state/${checked}`)
+        .then((res) => {
+          console.log(res);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
   },
   components: {
     EditOutlined,
