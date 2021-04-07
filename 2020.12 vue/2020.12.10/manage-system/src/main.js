@@ -5,6 +5,7 @@ import router from "./router";
 // 使用Ant-Design-Vue
 import Antd from "ant-design-vue";
 import "ant-design-vue/dist/antd.css";
+// 富文本编辑器
 import CKEditor from "@ckeditor/ckeditor5-vue";
 //  使用axios
 import axios from "axios";
@@ -14,6 +15,7 @@ import axios from "axios";
 axios.defaults.baseURL = "http://www.wanlum.com:8888/api/private/v1/";
 
 let app = createApp(App);
+// 配置全局属性
 app.config.globalProperties.$axios = axios;
 
 app
